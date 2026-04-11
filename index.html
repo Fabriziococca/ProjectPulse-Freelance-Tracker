@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <title>ProjectPulse</title>
+    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="container">
+        <h1>Project<span class="accent">Pulse</span></h1>
+        
+        <div class="card form-card">
+            <h3>Nuevo Proyecto</h3>
+            <form id="projectForm">
+                <div class="input-group">
+                    <label for="clientName">Cliente (Ej: Gustavo Damian)</label>
+                    <input type="text" id="clientName" class="text-input" required placeholder="Nombre del cliente">
+                </div>
+                <div class="input-group">
+                    <label for="projectName">Proyecto</label>
+                    <input type="text" id="projectName" class="text-input" required placeholder="Ej: Automatización ListoHogar">
+                </div>
+                <div class="input-group">
+                    <label for="acceptDate">Fecha y Hora de Aceptación</label>
+                    <input type="datetime-local" id="acceptDate" class="date-input" required>
+                </div>
+                <div class="input-group">
+                    <label for="deliveryDays">Tiempo de Entrega (Días corridos)</label>
+                    <input type="number" id="deliveryDays" class="number-input" min="1" required placeholder="Ej: 14">
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Agregar Proyecto</button>
+            </form>
+        </div>
+
+        <hr class="divider">
+
+        <div class="projects-header">
+            <h3>Proyectos Activos</h3>
+            <span id="activeCount" class="badge">0</span>
+        </div>
+        <div id="projectsList" class="projects-container">
+            </div>
+
+        <hr class="divider">
+
+        <div class="backup-section">
+            <button id="btnExport" class="btn-text">Descargar Backup (JSON)</button>
+            <label for="importFile" class="btn-text" style="cursor:pointer; display:block;">Importar Backup</label>
+            <input type="file" id="importFile" class="hidden" accept=".json">
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Registro del Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Falló: ', err));
+            });
+        }
+    </script>
+</body>
+</html>
