@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const workanaFeeSelect = document.getElementById('workanaFeeSelect');
     const customFeeContainer = document.getElementById('customFeeContainer');
     const inputCustomWorkanaFee = document.getElementById('customWorkanaFee');
+    const btnReload = document.getElementById('btnReload'); // NUEVO
     
     // --- ELEMENTOS DEL DOM: DASHBOARD ---
     const projectsList = document.getElementById('projectsList');
@@ -29,6 +30,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- ESTADO DE LA APLICACIÓN ---
     let projects = JSON.parse(localStorage.getItem('projectPulseData')) || [];
     let currentEditId = null;
+
+    // --- NUEVO: LÓGICA DEL BOTÓN DE RECARGA ---
+    if (btnReload) {
+        btnReload.addEventListener('click', () => {
+            if (confirm('¿Quieres forzar la recarga de la app? Esto buscará la última versión en GitHub. Tus proyectos no se borrarán.')) {
+                window.location.reload(true);
+            }
+        });
+    }
 
     // --- LÓGICA DE INTERFAZ DINÁMICA ---
     workanaFeeSelect.addEventListener('change', () => {
