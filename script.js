@@ -39,20 +39,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- CEREBRO FINANCIERO (ORDEN DE OPERACIONES CRUCIAL) ---
+    // --- CEREBRO FINANCIERO ---
     function calculateNet(gross, wFeeType, manualPercent) {
-        // Caso 1: Cliente Particular (0% Comisiones)
-        if (wFeeType === 'direct') {
-            return parseFloat(gross.toFixed(2));
-        }
+        if (wFeeType === 'direct') return parseFloat(gross.toFixed(2));
 
-        // Determinar % de Workana
         let workanaPercent = (wFeeType === 'custom') ? (parseFloat(manualPercent) || 0) : parseFloat(wFeeType);
-
-        // Paso A: Descuento de Workana sobre el Bruto
         const amountAfterWorkana = gross * (1 - (workanaPercent / 100));
-        
-        // Paso B: Descuento Fijo de retiro (7.32%) sobre el remanente
         const finalNet = amountAfterWorkana * (1 - FIXED_FEE);
         
         return parseFloat(finalNet.toFixed(2));
@@ -62,6 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         inputAcceptDate.value = now.toISOString().slice(0, 16);
+    }
+
+    function formatDate(isoString) {
+        const d = new Date(isoString);
+        return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
     }
 
     // --- GESTIÓN DE PROYECTOS ---
@@ -116,18 +113,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const extraD = parseInt(inputExtraDays.value) || 0;
         const extraB = parseFloat(inputExtraBudget.value) || 0;
 
-        // Actualizar Deadline si hay días extra
         if (extraD > 0) {
             const currentDeadline = new Date(p.deadline);
             p.deadline = new Date(currentDeadline.getTime() + (extraD * 24 * 60 * 60 * 1000)).toISOString();
             p.days += extraD;
         }
 
-        // Actualizar Presupuesto y recalcular Neto
         const currentGross = parseFloat(p.budgetGross) || 0;
         if (extraB > 0 || (extraB === 0 && currentGross === 0)) {
             p.budgetGross = currentGross + extraB;
-            // Se mantiene la configuración de comisiones original del proyecto
             p.budgetNet = calculateNet(p.budgetGross, p.wFeeType || '20', p.manualPercent || '0');
         }
 
@@ -182,27 +176,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const card = document.createElement('div');
             card.className = 'card';
+            
+            // Inyección de HTML restaurada a la estructura V1.1
             card.innerHTML = `
                 <div class="project-client">${p.client}</div>
                 <div class="project-name">${p.project}</div>
+                
                 <div class="finance-block">
                     <div class="gross-amount">Bruto: $${(p.budgetGross || 0).toFixed(2)}</div>
                     <div class="net-amount">Neto: $${(p.budgetNet || 0).toFixed(2)}</div>
                 </div>
+
                 <div class="project-dates">
                     <div class="date-block">
-                        <span>Inicio:</span>
-                        <strong>${new Date(p.accepted).toLocaleDateString()}</strong>
+                        <span>Aceptado:</span>
+                        <strong>${formatDate(p.accepted)}</strong>
                     </div>
                     <div class="date-block" style="text-align: right;">
                         <span>Límite (${p.days}d):</span>
-                        <strong>${deadline.toLocaleDateString()}</strong>
+                        <strong>${formatDate(p.deadline)}</strong>
                     </div>
                 </div>
+
                 <div class="progress-container">
                     <div class="progress-bar" style="width:${progress}%; background:${colorVar}"></div>
                 </div>
+                
                 <div class="countdown" style="color:${colorVar}">${countdownText}</div>
+                
                 <div class="card-actions">
                     <button class="btn btn-edit half" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
                     <button class="btn btn-delete half" onclick="deleteProject('${p.id}')">Entregado</button>
