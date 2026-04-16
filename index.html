@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0f172a">
-    <title>ProjectPulse V1.1</title>
+    <title>ProjectPulse V1.2</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="stylesheet" href="styles.css">
@@ -18,40 +18,44 @@
             <h3>Nuevo Proyecto</h3>
             <form id="projectForm">
                 <div class="input-group">
-                    <label for="clientName">Cliente (Ej: Gustavo Damian)</label>
-                    <input type="text" id="clientName" class="text-input" required placeholder="Nombre del cliente">
-                </div>
-                <div class="input-group">
-                    <label for="projectName">Proyecto</label>
-                    <input type="text" id="projectName" class="text-input" required placeholder="Ej: Automatización ListoHogar">
+                    <label>Cliente / Proyecto</label>
+                    <div class="form-row">
+                        <input type="text" id="clientName" class="text-input half" required placeholder="Cliente">
+                        <input type="text" id="projectName" class="text-input half" required placeholder="Proyecto">
+                    </div>
                 </div>
                 
                 <div class="form-row">
                     <div class="input-group half">
-                        <label for="acceptDate">Aceptación</label>
+                        <label>Aceptación</label>
                         <input type="datetime-local" id="acceptDate" class="date-input" required>
                     </div>
                     <div class="input-group half">
-                        <label for="deliveryDays">Días de Entrega</label>
-                        <input type="number" id="deliveryDays" class="number-input" min="1" required placeholder="Ej: 14">
+                        <label>Días de Entrega</label>
+                        <input type="number" id="deliveryDays" class="number-input" min="1" required>
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="input-group half">
-                        <label for="budgetGross">Presupuesto (USD)</label>
-                        <input type="number" id="budgetGross" class="number-input" min="1" step="0.01" required placeholder="Ej: 307.20">
+                        <label>Presupuesto Bruto (USD)</label>
+                        <input type="number" id="budgetGross" class="number-input" min="0" step="0.01" required>
                     </div>
                     <div class="input-group half">
-                        <label for="workanaFee">Comisión Workana</label>
-                        <select id="workanaFee" class="text-input">
-                            <option value="20">20% (Nuevo)</option>
+                        <label>Comisión Workana</label>
+                        <select id="workanaFeeSelect" class="text-input">
+                            <option value="20">20% (Estándar)</option>
                             <option value="15">15%</option>
-                            <option value="10">10% (Recurrente)</option>
-                            <option value="5">5%</option>
-                            <option value="0">0% (Por fuera)</option>
+                            <option value="10">10% (Frecuente)</option>
+                            <option value="direct">Particular (0% Costo)</option>
+                            <option value="custom">Exacta (Manual) %</option>
                         </select>
                     </div>
+                </div>
+
+                <div id="customFeeContainer" class="input-group hidden">
+                    <label>Comisión Workana Manual (%)</label>
+                    <input type="number" id="customWorkanaFee" class="number-input" min="0" max="100" step="0.1" value="0">
                 </div>
 
                 <button type="submit" class="btn btn-primary">➕ Agregar Proyecto</button>
@@ -64,8 +68,7 @@
             <h3>Proyectos Activos</h3>
             <span id="activeCount" class="badge">0</span>
         </div>
-        <div id="projectsList" class="projects-container">
-            </div>
+        <div id="projectsList" class="projects-container"></div>
 
         <hr class="divider">
 
@@ -79,31 +82,24 @@
     <div id="edit-modal" class="modal hidden">
         <div class="modal-content">
             <h3 id="modal-title">Modificar Proyecto</h3>
-            <p class="modal-desc">Agregá tiempo o presupuesto extra.</p>
+            <p class="modal-desc">Ajustá tiempos o sumá presupuesto extra.</p>
             
             <div class="input-group">
-                <label for="extraDays">Sumar Días al Plazo</label>
-                <input type="number" id="extraDays" class="number-input" min="0" value="0" placeholder="Ej: 7">
+                <label>Sumar Días al Plazo</label>
+                <input type="number" id="extraDays" class="number-input" min="0" value="0">
             </div>
             <div class="input-group">
-                <label for="extraBudget">Sumar Presupuesto (USD Bruto)</label>
-                <input type="number" id="extraBudget" class="number-input" min="0" step="0.01" value="0" placeholder="Ej: 50">
+                <label>Sumar Presupuesto Bruto (USD)</label>
+                <input type="number" id="extraBudget" class="number-input" min="0" step="0.01" value="0">
             </div>
 
             <div class="modal-actions">
                 <button id="modal-cancel" class="btn btn-cancel">Cancelar</button>
-                <button id="modal-save" class="btn btn-save">Guardar Cambios</button>
+                <button id="modal-save" class="btn btn-save">Guardar</button>
             </div>
         </div>
     </div>
 
     <script src="script.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Falló: ', err));
-            });
-        }
-    </script>
 </body>
 </html>
