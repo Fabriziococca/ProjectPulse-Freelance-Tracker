@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0f172a">
-    <title>ProjectPulse</title>
+    <title>ProjectPulse V1.1</title>
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="stylesheet" href="styles.css">
@@ -25,14 +25,35 @@
                     <label for="projectName">Proyecto</label>
                     <input type="text" id="projectName" class="text-input" required placeholder="Ej: Automatización ListoHogar">
                 </div>
-                <div class="input-group">
-                    <label for="acceptDate">Fecha y Hora de Aceptación</label>
-                    <input type="datetime-local" id="acceptDate" class="date-input" required>
+                
+                <div class="form-row">
+                    <div class="input-group half">
+                        <label for="acceptDate">Aceptación</label>
+                        <input type="datetime-local" id="acceptDate" class="date-input" required>
+                    </div>
+                    <div class="input-group half">
+                        <label for="deliveryDays">Días de Entrega</label>
+                        <input type="number" id="deliveryDays" class="number-input" min="1" required placeholder="Ej: 14">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="deliveryDays">Tiempo de Entrega (Días corridos)</label>
-                    <input type="number" id="deliveryDays" class="number-input" min="1" required placeholder="Ej: 14">
+
+                <div class="form-row">
+                    <div class="input-group half">
+                        <label for="budgetGross">Presupuesto (USD)</label>
+                        <input type="number" id="budgetGross" class="number-input" min="1" step="0.01" required placeholder="Ej: 307.20">
+                    </div>
+                    <div class="input-group half">
+                        <label for="workanaFee">Comisión Workana</label>
+                        <select id="workanaFee" class="text-input">
+                            <option value="20">20% (Nuevo)</option>
+                            <option value="15">15%</option>
+                            <option value="10">10% (Recurrente)</option>
+                            <option value="5">5%</option>
+                            <option value="0">0% (Por fuera)</option>
+                        </select>
+                    </div>
                 </div>
+
                 <button type="submit" class="btn btn-primary">➕ Agregar Proyecto</button>
             </form>
         </div>
@@ -55,9 +76,29 @@
         </div>
     </div>
 
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3 id="modal-title">Modificar Proyecto</h3>
+            <p class="modal-desc">Agregá tiempo o presupuesto extra.</p>
+            
+            <div class="input-group">
+                <label for="extraDays">Sumar Días al Plazo</label>
+                <input type="number" id="extraDays" class="number-input" min="0" value="0" placeholder="Ej: 7">
+            </div>
+            <div class="input-group">
+                <label for="extraBudget">Sumar Presupuesto (USD Bruto)</label>
+                <input type="number" id="extraBudget" class="number-input" min="0" step="0.01" value="0" placeholder="Ej: 50">
+            </div>
+
+            <div class="modal-actions">
+                <button id="modal-cancel" class="btn btn-cancel">Cancelar</button>
+                <button id="modal-save" class="btn btn-save">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
     <script>
-        // Registro del Service Worker para PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Falló: ', err));

@@ -1,38 +1,62 @@
 document.addEventListener("DOMContentLoaded", () => {
     
-    // 1. DOM Elements
+    // 1. Constantes Financieras
+    const FIXED_FEE = 0.0732; // 7.32% (PayPal + Lemon, etc.)
+
+    // 2. DOM Elements - Formulario
     const form = document.getElementById('projectForm');
     const inputClientName = document.getElementById('clientName');
     const inputProjectName = document.getElementById('projectName');
     const inputAcceptDate = document.getElementById('acceptDate');
     const inputDeliveryDays = document.getElementById('deliveryDays');
+    const inputBudgetGross = document.getElementById('budgetGross');
+    const inputWorkanaFee = document.getElementById('workanaFee');
     
     const projectsList = document.getElementById('projectsList');
     const activeCount = document.getElementById('activeCount');
     
+    // Backup
     const btnExport = document.getElementById('btnExport');
     const importFile = document.getElementById('importFile');
 
-    // 2. Estado (Cargar de localStorage)
+    // Modal
+    const modal = document.getElementById('edit-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const inputExtraDays = document.getElementById('extraDays');
+    const inputExtraBudget = document.getElementById('extraBudget');
+    const btnModalCancel = document.getElementById('modal-cancel');
+    const btnModalSave = document.getElementById('modal-save');
+    
+    let currentEditId = null;
+
+    // 3. Estado
     let projects = JSON.parse(localStorage.getItem('projectPulseData')) || [];
 
-    // Setear la fecha actual en el input por defecto (Hora local)
     function setDefaultDate() {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         inputAcceptDate.value = now.toISOString().slice(0, 16);
     }
 
+    // ---------------- MOTOR FINANCIERO ---------------- //
+
+    function calculateNet(gross, workanaFeePercent) {
+        const afterWorkana = gross * (1 - (workanaFeePercent / 100));
+        const finalNet = afterWorkana * (1 - FIXED_FEE);
+        return parseFloat(finalNet.toFixed(2));
+    }
+
     // ---------------- LÓGICA PRINCIPAL ---------------- //
 
-    // Manejar envío del formulario
     form.addEventListener('submit', (e) => {
         e.preventDefault();
 
         const acceptedDate = new Date(inputAcceptDate.value);
         const days = parseInt(inputDeliveryDays.value);
+        const gross = parseFloat(inputBudgetGross.value);
+        const wFee = parseInt(inputWorkanaFee.value);
         
-        // Calcular Deadline (Sumar ms de los días a la fecha de aceptación)
+        // Calcular Deadline
         const deadlineDate = new Date(acceptedDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
         const newProject = {
@@ -41,32 +65,73 @@ document.addEventListener("DOMContentLoaded", () => {
             project: inputProjectName.value.trim(),
             accepted: acceptedDate.toISOString(),
             days: days,
-            deadline: deadlineDate.toISOString()
+            deadline: deadlineDate.toISOString(),
+            budgetGross: gross,
+            workanaFee: wFee,
+            budgetNet: calculateNet(gross, wFee)
         };
 
         projects.push(newProject);
         saveAndRender();
         
-        // Reset form pero manteniendo la fecha actual
         form.reset();
         setDefaultDate();
     });
 
     window.deleteProject = (id) => {
-        if (confirm('¿Proyecto entregado/terminado? Se borrará de la lista activa.')) {
+        if (confirm('¿Proyecto entregado? Se eliminará de la lista activa.')) {
             projects = projects.filter(p => p.id !== id);
             saveAndRender();
         }
     };
 
     function saveAndRender() {
-        // Ordenar por fecha de entrega más cercana primero
         projects.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
         localStorage.setItem('projectPulseData', JSON.stringify(projects));
         renderProjects();
     }
 
-    // ---------------- MOTOR DE RENDERIZADO Y CÁLCULO ---------------- //
+    // ---------------- GESTIÓN DE EXTENSIONES (MODAL) ---------------- //
+
+    window.openEditModal = (id) => {
+        currentEditId = id;
+        const p = projects.find(proj => proj.id === id);
+        modalTitle.innerText = `Editar: ${p.client}`;
+        inputExtraDays.value = 0;
+        inputExtraBudget.value = 0;
+        modal.classList.remove('hidden');
+    };
+
+    btnModalCancel.addEventListener('click', () => {
+        modal.classList.add('hidden');
+        currentEditId = null;
+    });
+
+    btnModalSave.addEventListener('click', () => {
+        if (!currentEditId) return;
+        
+        const p = projects.find(proj => proj.id === currentEditId);
+        const extraD = parseInt(inputExtraDays.value) || 0;
+        const extraB = parseFloat(inputExtraBudget.value) || 0;
+
+        if (extraD > 0) {
+            const currentDeadline = new Date(p.deadline);
+            p.deadline = new Date(currentDeadline.getTime() + (extraD * 24 * 60 * 60 * 1000)).toISOString();
+            p.days += extraD;
+        }
+
+        if (extraB > 0) {
+            p.budgetGross += extraB;
+            // Se asume que el presupuesto extra mantiene la misma comisión de Workana del proyecto base
+            p.budgetNet = calculateNet(p.budgetGross, p.workanaFee);
+        }
+
+        saveAndRender();
+        modal.classList.add('hidden');
+        currentEditId = null;
+    });
+
+    // ---------------- RENDERIZADO VISUAL ---------------- //
 
     function formatDate(isoString) {
         const d = new Date(isoString);
@@ -88,20 +153,17 @@ document.addEventListener("DOMContentLoaded", () => {
             const accepted = new Date(p.accepted);
             const deadline = new Date(p.deadline);
             
-            // Cálculos de tiempo
             const totalMs = deadline.getTime() - accepted.getTime();
             const remainingMs = deadline.getTime() - now.getTime();
             
-            // Lógica de progreso
             let progressPercent = ((totalMs - remainingMs) / totalMs) * 100;
             if (progressPercent < 0) progressPercent = 0;
             if (progressPercent > 100) progressPercent = 100;
             
             let remainingPercent = (remainingMs / totalMs) * 100;
             
-            // Formatear texto de Faltan X días / horas
             let countdownText = "";
-            let colorVar = "var(--success)"; // Default Verde
+            let colorVar = "var(--success)"; 
             
             if (remainingMs <= 0) {
                 countdownText = "¡TIEMPO AGOTADO!";
@@ -109,33 +171,35 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
                 const rDays = Math.floor(remainingMs / (1000 * 60 * 60 * 24));
                 const rHours = Math.floor((remainingMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                
                 countdownText = `Faltan ${rDays}d ${rHours}h`;
 
-                // Semáforo Adaptativo (Lógica de Arquitectura)
-                if (remainingPercent <= 5) {
-                    colorVar = "var(--danger)"; // Rojo: < 5% del tiempo total
-                } else if (remainingPercent <= 20) {
-                    colorVar = "var(--accent)"; // Naranja: < 20%
-                } else if (remainingPercent <= 50) {
-                    colorVar = "var(--warning)"; // Amarillo: < 50%
-                }
+                if (remainingPercent <= 5) colorVar = "var(--danger)"; 
+                else if (remainingPercent <= 20) colorVar = "var(--accent)"; 
+                else if (remainingPercent <= 50) colorVar = "var(--warning)"; 
             }
 
-            // Crear Tarjeta
+            // Manejar compatibilidad con V1.0 (si no tenían presupuesto)
+            const gross = p.budgetGross ? p.budgetGross.toFixed(2) : "0.00";
+            const net = p.budgetNet ? p.budgetNet.toFixed(2) : "0.00";
+
             const card = document.createElement('div');
             card.className = 'card';
             card.innerHTML = `
                 <div class="project-client">${p.client}</div>
                 <div class="project-name">${p.project}</div>
                 
+                <div class="finance-block">
+                    <div class="gross-amount">Bruto: USD ${gross}</div>
+                    <div class="net-amount">Neto: USD ${net}</div>
+                </div>
+
                 <div class="project-dates">
                     <div class="date-block">
                         <span>Aceptado:</span>
                         <strong>${formatDate(p.accepted)}</strong>
                     </div>
                     <div class="date-block" style="text-align: right;">
-                        <span>Límite (${p.days} días):</span>
+                        <span>Límite (${p.days}d):</span>
                         <strong>${formatDate(p.deadline)}</strong>
                     </div>
                 </div>
@@ -146,17 +210,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div class="countdown" style="color: ${colorVar};">${countdownText}</div>
                 
-                <button class="btn btn-delete" onclick="deleteProject('${p.id}')">Marcar como Entregado</button>
+                <div class="card-actions">
+                    <button class="btn btn-edit" onclick="openEditModal('${p.id}')">⚙️ Modificar</button>
+                    <button class="btn btn-delete" onclick="deleteProject('${p.id}')">Entregado</button>
+                </div>
             `;
             
             projectsList.appendChild(card);
         });
     }
 
-    // Actualizar los contadores visuales cada minuto sin recargar la página
     setInterval(renderProjects, 60000); 
 
-    // ---------------- BACKUP SYSTEM (JSON) ---------------- //
+    // ---------------- BACKUP SYSTEM ---------------- //
 
     if (btnExport) {
         btnExport.addEventListener('click', () => {
@@ -189,7 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Arranque
     setDefaultDate();
     renderProjects();
 });
