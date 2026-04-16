@@ -57,7 +57,7 @@ h1 {
     text-align: center;
     color: var(--text);
     margin-top: 0;
-    margin-bottom: 0; /* Ajustado a 0 porque main-header ya tiene margin */
+    margin-bottom: 0;
     font-size: 2rem;
 }
 
@@ -69,6 +69,51 @@ h3 {
     margin-top: 0;
     font-size: 1.2rem;
     color: var(--text);
+}
+
+/* Dashboard Financiero */
+.dashboard-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 0.5rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.stat-card h4 {
+    margin: 0 0 10px 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.stat-value {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-usd {
+    color: var(--success);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.stat-ars {
+    color: var(--warning);
+    font-size: 1rem;
+    font-weight: 600;
 }
 
 /* Tarjetas */
@@ -134,7 +179,7 @@ h3 {
 
 .btn:active { transform: scale(0.98); }
 .btn-primary { background-color: var(--accent); color: white; margin-top: 0.5rem; }
-.btn-delete { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 0.8rem; font-size: 0.9rem; margin-top: 1rem; }
+.btn-delete { background: transparent; border: 1px solid var(--success); color: var(--success); padding: 0.8rem; font-size: 0.9rem; margin-top: 1rem; }
 .btn-edit { background: #334155; color: white; padding: 0.8rem; font-size: 0.9rem; margin-top: 1rem; }
 .btn-text { background: none; border: none; color: var(--text-muted); text-decoration: underline; padding: 0.5rem; width: 100%; margin-top: 1rem; cursor: pointer;}
 

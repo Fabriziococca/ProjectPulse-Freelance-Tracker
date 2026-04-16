@@ -10,15 +10,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputAcceptDate = document.getElementById('acceptDate');
     const inputDeliveryDays = document.getElementById('deliveryDays');
     const inputBudgetGross = document.getElementById('budgetGross');
+    const currencySelect = document.getElementById('currencySelect');
     const workanaFeeSelect = document.getElementById('workanaFeeSelect');
     const customFeeContainer = document.getElementById('customFeeContainer');
     const inputCustomWorkanaFee = document.getElementById('customWorkanaFee');
-    const btnReload = document.getElementById('btnReload'); // NUEVO
+    const btnReload = document.getElementById('btnReload');
     
     // --- ELEMENTOS DEL DOM: DASHBOARD ---
     const projectsList = document.getElementById('projectsList');
     const activeCount = document.getElementById('activeCount');
     
+    const activeUSD = document.getElementById('activeUSD');
+    const activeARS = document.getElementById('activeARS');
+    const monthUSD = document.getElementById('monthUSD');
+    const monthARS = document.getElementById('monthARS');
+    const totalUSD = document.getElementById('totalUSD');
+    const totalARS = document.getElementById('totalARS');
+
     // --- ELEMENTOS DEL DOM: MODAL DE EDICIÓN ---
     const modal = document.getElementById('edit-modal');
     const modalTitle = document.getElementById('modal-title');
@@ -29,9 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // --- ESTADO DE LA APLICACIÓN ---
     let projects = JSON.parse(localStorage.getItem('projectPulseData')) || [];
+    let history = JSON.parse(localStorage.getItem('projectPulseHistory')) || [];
     let currentEditId = null;
 
-    // --- NUEVO: LÓGICA DEL BOTÓN DE RECARGA ---
     if (btnReload) {
         btnReload.addEventListener('click', () => {
             if (confirm('¿Quieres forzar la recarga de la app? Esto buscará la última versión en GitHub. Tus proyectos no se borrarán.')) {
@@ -67,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function formatDate(isoString) {
+        if (!isoString) return '';
         const d = new Date(isoString);
         return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' });
     }
@@ -88,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
             accepted: acceptedDate.toISOString(),
             days: days,
             deadline: deadlineDate.toISOString(),
+            currency: currencySelect.value,
             budgetGross: gross,
             wFeeType: workanaFeeSelect.value,
             manualPercent: inputCustomWorkanaFee.value,
@@ -141,9 +151,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     window.deleteProject = (id) => {
-        if (confirm('¿Proyecto terminado? Se eliminará de la lista activa.')) {
-            projects = projects.filter(p => p.id !== id);
-            saveAndRender();
+        if (confirm('¿Proyecto entregado? Se moverá al histórico de ingresos.')) {
+            const index = projects.findIndex(p => p.id === id);
+            if (index > -1) {
+                const finishedProject = projects[index];
+                finishedProject.deliveredDate = new Date().toISOString();
+                history.push(finishedProject);
+                projects.splice(index, 1);
+                
+                localStorage.setItem('projectPulseHistory', JSON.stringify(history));
+                saveAndRender();
+            }
         }
     };
 
@@ -151,9 +169,55 @@ document.addEventListener("DOMContentLoaded", () => {
         projects.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
         localStorage.setItem('projectPulseData', JSON.stringify(projects));
         renderProjects();
+        renderDashboard();
     }
 
     // --- RENDERIZADO VISUAL ---
+    function renderDashboard() {
+        let actUSD = 0, actARS = 0;
+        let mthUSD = 0, mthARS = 0;
+        let totUSD = 0, totARS = 0;
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        projects.forEach(p => {
+            const net = p.budgetNet || 0;
+            if (p.currency === 'ARS') actARS += net;
+            else actUSD += net;
+        });
+
+        history.forEach(p => {
+            const isARS = p.currency === 'ARS';
+            const net = p.budgetNet || 0;
+            
+            // Histórico total
+            if (isARS) totARS += net;
+            else totUSD += net;
+
+            // Mes actual
+            if (p.deliveredDate) {
+                const dDate = new Date(p.deliveredDate);
+                if (dDate.getMonth() === currentMonth && dDate.getFullYear() === currentYear) {
+                    if (isARS) mthARS += net;
+                    else mthUSD += net;
+                }
+            }
+        });
+
+        const formatMoney = (val) => val.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        if(activeUSD) activeUSD.innerText = `USD ${formatMoney(actUSD)}`;
+        if(activeARS) activeARS.innerText = `ARS ${formatMoney(actARS)}`;
+        
+        if(monthUSD) monthUSD.innerText = `USD ${formatMoney(mthUSD)}`;
+        if(monthARS) monthARS.innerText = `ARS ${formatMoney(mthARS)}`;
+
+        if(totalUSD) totalUSD.innerText = `USD ${formatMoney(totUSD)}`;
+        if(totalARS) totalARS.innerText = `ARS ${formatMoney(totARS)}`;
+    }
+
     function renderProjects() {
         projectsList.innerHTML = '';
         activeCount.innerText = projects.length;
@@ -187,14 +251,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement('div');
             card.className = 'card';
             
-            // Inyección de HTML restaurada a la estructura V1.1
+            const currSymbol = p.currency || 'USD';
+            
             card.innerHTML = `
                 <div class="project-client">${p.client}</div>
                 <div class="project-name">${p.project}</div>
                 
                 <div class="finance-block">
-                    <div class="gross-amount">Bruto: $${(p.budgetGross || 0).toFixed(2)}</div>
-                    <div class="net-amount">Neto: $${(p.budgetNet || 0).toFixed(2)}</div>
+                    <div class="gross-amount">Bruto: ${currSymbol} ${(p.budgetGross || 0).toFixed(2)}</div>
+                    <div class="net-amount">Neto: ${currSymbol} ${(p.budgetNet || 0).toFixed(2)}</div>
                 </div>
 
                 <div class="project-dates">
@@ -216,7 +281,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div class="card-actions">
                     <button class="btn btn-edit half" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
-                    <button class="btn btn-delete half" onclick="deleteProject('${p.id}')">Entregado</button>
+                    <button class="btn btn-delete half" onclick="deleteProject('${p.id}')">✔️ Entregado</button>
                 </div>
             `;
             projectsList.appendChild(card);
@@ -225,7 +290,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- SISTEMA DE BACKUP ---
     document.getElementById('btnExport').addEventListener('click', () => {
-        const data = { projectPulseData: localStorage.getItem('projectPulseData') };
+        const data = { 
+            projectPulseData: localStorage.getItem('projectPulseData'),
+            projectPulseHistory: localStorage.getItem('projectPulseHistory')
+        };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: "application/json"});
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
@@ -238,10 +306,17 @@ document.addEventListener("DOMContentLoaded", () => {
         reader.onload = (ev) => {
             try {
                 const data = JSON.parse(ev.target.result);
-                if (data.projectPulseData) {
+                let imported = false;
+                if (data.projectPulseData !== undefined) {
                     localStorage.setItem('projectPulseData', data.projectPulseData);
-                    location.reload();
+                    imported = true;
                 }
+                if (data.projectPulseHistory !== undefined) {
+                    localStorage.setItem('projectPulseHistory', data.projectPulseHistory);
+                    imported = true;
+                }
+                if (imported) location.reload();
+                else alert('El archivo no contiene datos válidos de ProjectPulse.');
             } catch (err) { alert('Backup inválido.'); }
         };
         reader.readAsText(e.target.files[0]);
@@ -250,4 +325,5 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(renderProjects, 60000);
     setDefaultDate();
     renderProjects();
+    renderDashboard();
 });
