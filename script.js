@@ -177,6 +177,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    window.removeProject = (id) => {
+        if (confirm('¿Eliminar este proyecto por error? Se borrará por completo y NO se sumará al historial.')) {
+            const index = projects.findIndex(p => p.id === id);
+            if (index > -1) {
+                projects.splice(index, 1);
+                // localStorage.setItem('projectPulseData', JSON.stringify(projects));
+                saveAndRender();
+            }
+        }
+    };
+
     function saveAndRender() {
         projects.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
         localStorage.setItem('projectPulseData', JSON.stringify(projects));
@@ -267,10 +278,15 @@ document.addEventListener("DOMContentLoaded", () => {
             const delegatedBadge = p.isDelegated ? '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>' : '';
             
             card.innerHTML = `
-                <div class="project-client" style="display:flex; align-items:center;">
-                    ${p.client} ${delegatedBadge}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div class="project-client" style="display:flex; align-items:center;">
+                            ${p.client} ${delegatedBadge}
+                        </div>
+                        <div class="project-name">${p.project}</div>
+                    </div>
+                    <button onclick="removeProject('${p.id}')" title="Eliminar definitivamente" style="background:transparent; border:none; color:var(--text-muted); font-size:1.2rem; cursor:pointer; padding:0 0 10px 10px; opacity:0.8;">🗑️</button>
                 </div>
-                <div class="project-name">${p.project}</div>
                 
                 <div class="finance-block">
                     <div class="gross-amount">Bruto: ${currSymbol} ${(p.budgetGross || 0).toFixed(2)}</div>
