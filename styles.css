@@ -202,16 +202,18 @@ h3 {
 /* Finanzas */
 .finance-block {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     background: var(--bg);
-    padding: 12px;
+    padding: 15px 12px;
     border-radius: 8px;
     margin-bottom: 1rem;
     align-items: center;
+    gap: 6px;
 }
 
-.gross-amount { color: var(--text-muted); font-size: 0.9rem; }
-.net-amount { color: var(--success); font-size: 1.2rem; font-weight: 900; }
+.gross-amount { color: var(--text-muted); font-size: 0.95rem; }
+.net-amount { color: var(--success); font-size: 1.5rem; font-weight: 900; text-align: center; }
 
 .project-dates {
     display: flex;
@@ -219,11 +221,11 @@ h3 {
     font-size: 0.85rem;
     margin-bottom: 1rem;
     background: var(--bg);
-    padding: 10px;
+    padding: 12px;
     border-radius: 8px;
 }
 
-.date-block span { display: block; color: var(--text-muted); margin-bottom: 2px; }
+.date-block span { display: block; color: var(--text-muted); margin-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px;}
 .date-block strong { color: var(--text); }
 .countdown { text-align: center; font-size: 1.5rem; font-weight: 900; margin: 1rem 0; }
 

@@ -58,12 +58,19 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // --- CEREBRO FINANCIERO ---
-    function calculateNet(gross, wFeeType, manualPercent) {
-        if (wFeeType === 'direct') return parseFloat(gross.toFixed(2));
-
-        let workanaPercent = (wFeeType === 'custom') ? (parseFloat(manualPercent) || 0) : parseFloat(wFeeType);
-        const amountAfterWorkana = gross * (1 - (workanaPercent / 100));
-        const finalNet = amountAfterWorkana * (1 - FIXED_FEE);
+    function calculateNet(gross, wFeeType, manualPercent, isDelegated = false) {
+        let finalNet = 0;
+        if (wFeeType === 'direct') {
+            finalNet = gross;
+        } else {
+            let workanaPercent = (wFeeType === 'custom') ? (parseFloat(manualPercent) || 0) : parseFloat(wFeeType);
+            const amountAfterWorkana = gross * (1 - (workanaPercent / 100));
+            finalNet = amountAfterWorkana * (1 - FIXED_FEE);
+        }
+        
+        if (isDelegated) {
+            finalNet = finalNet * 0.30;
+        }
         
         return parseFloat(finalNet.toFixed(2));
     }
@@ -90,6 +97,9 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const deadlineDate = new Date(acceptedDate.getTime() + (days * 24 * 60 * 60 * 1000));
 
+        const isDelegatedInput = document.getElementById('isDelegated');
+        const isDelegated = isDelegatedInput ? isDelegatedInput.checked : false;
+
         const newProject = {
             id: Date.now().toString(),
             client: inputClientName.value.trim(),
@@ -101,7 +111,8 @@ document.addEventListener("DOMContentLoaded", () => {
             budgetGross: gross,
             wFeeType: workanaFeeSelect.value,
             manualPercent: inputCustomWorkanaFee.value,
-            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value)
+            isDelegated: isDelegated,
+            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated)
         };
 
         projects.push(newProject);
@@ -110,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         form.reset();
         setDefaultDate();
         customFeeContainer.classList.add('hidden');
+        if (isDelegatedInput) isDelegatedInput.checked = false;
     });
 
     window.openEditModal = (id) => {
@@ -142,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentGross = parseFloat(p.budgetGross) || 0;
         if (extraB > 0 || (extraB === 0 && currentGross === 0)) {
             p.budgetGross = currentGross + extraB;
-            p.budgetNet = calculateNet(p.budgetGross, p.wFeeType || '20', p.manualPercent || '0');
+            p.budgetNet = calculateNet(p.budgetGross, p.wFeeType || '20', p.manualPercent || '0', p.isDelegated);
         }
 
         saveAndRender();
@@ -252,9 +264,12 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = 'card';
             
             const currSymbol = p.currency || 'USD';
+            const delegatedBadge = p.isDelegated ? '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>' : '';
             
             card.innerHTML = `
-                <div class="project-client">${p.client}</div>
+                <div class="project-client" style="display:flex; align-items:center;">
+                    ${p.client} ${delegatedBadge}
+                </div>
                 <div class="project-name">${p.project}</div>
                 
                 <div class="finance-block">
