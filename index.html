@@ -39,6 +39,7 @@
                     <span id="totalUSD" class="stat-usd">USD 0.00</span>
                     <span id="totalARS" class="stat-ars">ARS 0.00</span>
                 </div>
+                <button id="btnOpenHistory" style="background:none; border:none; color:var(--text-muted); text-decoration:underline; font-size:0.8rem; margin-top:8px; cursor:pointer;">Ver meses</button>
             </div>
         </div>
 
@@ -137,6 +138,22 @@
             <div class="modal-actions">
                 <button id="modal-cancel" class="btn btn-cancel">Cancelar</button>
                 <button id="modal-save" class="btn btn-save">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL HISTORIAL MENSUAL -->
+    <div id="monthly-history-modal" class="modal hidden">
+        <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+            <h3 style="margin-bottom: 5px;">Historial Mensual</h3>
+            <p class="modal-desc" style="margin-bottom: 10px;">Ingresos por cada mes finalizado.</p>
+            
+            <div id="monthlyHistoryList" style="overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; margin-bottom: 15px;">
+                <!-- Rellenado por JS -->
+            </div>
+
+            <div class="modal-actions">
+                <button id="close-history-modal" class="btn btn-cancel" style="width: 100%;">Cerrar</button>
             </div>
         </div>
     </div>

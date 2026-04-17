@@ -34,6 +34,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputExtraBudget = document.getElementById('extraBudget');
     const btnModalCancel = document.getElementById('modal-cancel');
     const btnModalSave = document.getElementById('modal-save');
+
+    // --- ELEMENTOS DEL DOM: HISTORIAL MENSUAL ---
+    const btnOpenHistory = document.getElementById('btnOpenHistory');
+    const modalMonthlyHistory = document.getElementById('monthly-history-modal');
+    const btnCloseHistoryModal = document.getElementById('close-history-modal');
+    const monthlyHistoryList = document.getElementById('monthlyHistoryList');
     
     // --- ESTADO DE LA APLICACIÓN ---
     let projects = JSON.parse(localStorage.getItem('projectPulseData')) || [];
@@ -45,6 +51,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (confirm('¿Quieres forzar la recarga de la app? Esto buscará la última versión en GitHub. Tus proyectos no se borrarán.')) {
                 window.location.reload(true);
             }
+        });
+    }
+
+    if (btnOpenHistory) {
+        btnOpenHistory.addEventListener('click', () => {
+            renderMonthlyHistory();
+            modalMonthlyHistory.classList.remove('hidden');
+        });
+    }
+
+    if (btnCloseHistoryModal) {
+        btnCloseHistoryModal.addEventListener('click', () => {
+            modalMonthlyHistory.classList.add('hidden');
         });
     }
 
@@ -239,6 +258,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if(totalUSD) totalUSD.innerText = `USD ${formatMoney(totUSD)}`;
         if(totalARS) totalARS.innerText = `ARS ${formatMoney(totARS)}`;
+    }
+
+    function renderMonthlyHistory() {
+        if (!monthlyHistoryList) return;
+        monthlyHistoryList.innerHTML = '';
+        
+        if (history.length === 0) {
+            monthlyHistoryList.innerHTML = '<p style="color:var(--text-muted); text-align:center;">No hay proyectos finalizados aún.</p>';
+            return;
+        }
+
+        const monthsData = {};
+
+        history.forEach(p => {
+            if (!p.deliveredDate) return;
+            const dDate = new Date(p.deliveredDate);
+            const monthKey = `${dDate.getFullYear()}-${String(dDate.getMonth() + 1).padStart(2, '0')}`;
+            
+            if (!monthsData[monthKey]) {
+                const monthName = dDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
+                monthsData[monthKey] = {
+                    label: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+                    usd: 0,
+                    ars: 0,
+                    count: 0
+                };
+            }
+            
+            const net = p.budgetNet || 0;
+            if (p.currency === 'ARS') {
+                monthsData[monthKey].ars += net;
+            } else {
+                monthsData[monthKey].usd += net;
+            }
+            monthsData[monthKey].count++;
+        });
+
+        const sortedKeys = Object.keys(monthsData).sort().reverse();
+        const formatMoney = (val) => val.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        sortedKeys.forEach(key => {
+            const data = monthsData[key];
+            const card = document.createElement('div');
+            card.style.cssText = "background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px;";
+            
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:5px;">
+                    <strong style="color:var(--text); font-size:1rem;">${data.label}</strong>
+                    <span class="badge" style="font-size:0.75rem; padding:2px 6px;">${data.count} proy.</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
+                    <span style="color:var(--success); font-weight:bold;">USD ${formatMoney(data.usd)}</span>
+                    <span style="color:var(--warning); font-weight:bold;">ARS ${formatMoney(data.ars)}</span>
+                </div>
+            `;
+            monthlyHistoryList.appendChild(card);
+        });
     }
 
     function renderProjects() {
