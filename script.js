@@ -41,10 +41,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnCloseHistoryModal = document.getElementById('close-history-modal');
     const monthlyHistoryList = document.getElementById('monthlyHistoryList');
     
+    // --- ELEMENTOS DEL DOM: PLAN DE ACCIÓN ---
+    const modalActionPlan = document.getElementById('action-plan-modal');
+    const planModalTitle = document.getElementById('plan-modal-title');
+    const planModalClose = document.getElementById('plan-modal-close');
+    const planTextarea = document.getElementById('plan-textarea');
+    const newTaskInput = document.getElementById('new-task-input');
+    const btnAddTask = document.getElementById('btn-add-task');
+    const tasksListContainer = document.getElementById('tasks-list');
+    const btnPlanModalSave = document.getElementById('plan-modal-save');
+    
     // --- ESTADO DE LA APLICACIÓN ---
     let projects = JSON.parse(localStorage.getItem('projectPulseData')) || [];
     let history = JSON.parse(localStorage.getItem('projectPulseHistory')) || [];
     let currentEditId = null;
+    let currentPlanProjectId = null;
 
     if (btnReload) {
         btnReload.addEventListener('click', () => {
@@ -131,7 +142,9 @@ document.addEventListener("DOMContentLoaded", () => {
             wFeeType: workanaFeeSelect.value,
             manualPercent: inputCustomWorkanaFee.value,
             isDelegated: isDelegated,
-            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated)
+            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated),
+            actionPlanText: "",
+            tasks: []
         };
 
         projects.push(newProject);
@@ -180,6 +193,92 @@ document.addEventListener("DOMContentLoaded", () => {
         modal.classList.add('hidden');
         currentEditId = null;
     });
+
+    // --- LÓGICA DE PLAN DE ACCIÓN ---
+    window.openPlanModal = (id) => {
+        currentPlanProjectId = id;
+        const p = projects.find(proj => proj.id === id);
+        planModalTitle.innerText = `Plan: ${p.client}`;
+        planTextarea.value = p.actionPlanText || "";
+        renderTasks(p.tasks || []);
+        modalActionPlan.classList.remove('hidden');
+    };
+
+    planModalClose.addEventListener('click', () => {
+        modalActionPlan.classList.add('hidden');
+        currentPlanProjectId = null;
+    });
+
+    btnPlanModalSave.addEventListener('click', () => {
+        if (!currentPlanProjectId) return;
+        const p = projects.find(proj => proj.id === currentPlanProjectId);
+        if (p) {
+            p.actionPlanText = planTextarea.value;
+            saveAndRender();
+        }
+        modalActionPlan.classList.add('hidden');
+        currentPlanProjectId = null;
+    });
+
+    btnAddTask.addEventListener('click', () => {
+        const text = newTaskInput.value.trim();
+        if (!text || !currentPlanProjectId) return;
+
+        const p = projects.find(proj => proj.id === currentPlanProjectId);
+        if (!p.tasks) p.tasks = [];
+        
+        p.tasks.push({
+            id: Date.now().toString(),
+            text: text,
+            completed: false
+        });
+        
+        newTaskInput.value = '';
+        saveAndRender(); // Save state
+        renderTasks(p.tasks); // Re-render local list
+    });
+
+    window.toggleTask = (taskId) => {
+        if (!currentPlanProjectId) return;
+        const p = projects.find(proj => proj.id === currentPlanProjectId);
+        if (p && p.tasks) {
+            const task = p.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveAndRender();
+                renderTasks(p.tasks);
+            }
+        }
+    };
+
+    window.deleteTask = (taskId) => {
+        if (!currentPlanProjectId) return;
+        const p = projects.find(proj => proj.id === currentPlanProjectId);
+        if (p && p.tasks) {
+            p.tasks = p.tasks.filter(t => t.id !== taskId);
+            saveAndRender();
+            renderTasks(p.tasks);
+        }
+    };
+
+    function renderTasks(tasks) {
+        tasksListContainer.innerHTML = '';
+        if (tasks.length === 0) {
+            tasksListContainer.innerHTML = '<p style="color:var(--text-muted); font-size:0.9rem; margin:0;">No hay tareas específicas aún.</p>';
+            return;
+        }
+
+        tasks.forEach(task => {
+            const div = document.createElement('div');
+            div.className = 'task-item';
+            div.innerHTML = `
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''} onchange="toggleTask('${task.id}')">
+                <span class="task-text ${task.completed ? 'completed' : ''}">${task.text}</span>
+                <button class="btn-delete-task" onclick="deleteTask('${task.id}')" title="Eliminar tarea">&times;</button>
+            `;
+            tasksListContainer.appendChild(div);
+        });
+    }
 
     window.markAsDelivered = (id) => {
         if (confirm('¿Marcar como entregado? El proyecto quedará a la espera de pago.')) {
@@ -409,8 +508,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 
                 <div class="card-actions">
                     ${!p.isDelivered ? `
-                        <button class="btn btn-edit half" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
-                        <button class="btn btn-delete half" onclick="markAsDelivered('${p.id}')">✔️ Entregado</button>
+                        <button class="btn btn-edit" style="width: 100%; margin-top: 0.5rem; margin-bottom: 0.5rem; background: #475569;" onclick="openPlanModal('${p.id}')">📋 Plan de Acción</button>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-edit half" style="margin-top: 0;" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
+                            <button class="btn btn-delete half" style="margin-top: 0;" onclick="markAsDelivered('${p.id}')">✔️ Entregado</button>
+                        </div>
                     ` : `
                         <button class="btn full" style="background:var(--success); color:white; width:100%; border:none; padding:1rem; font-size:1.1rem; border-radius:12px; margin-top:1rem; cursor:pointer;" onclick="confirmPayment('${p.id}')">💰 Pago Confirmado</button>
                     `}
