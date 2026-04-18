@@ -125,6 +125,12 @@ h3 {
     margin-bottom: 1.5rem;
     position: relative;
     border: 1px solid var(--border);
+    transition: all 0.3s ease;
+}
+
+.card.delivered-card {
+    border-left: 4px solid var(--warning);
+    background-color: rgba(250, 204, 21, 0.05); /* Fondo suave amarillento/naranja */
 }
 
 .form-card {

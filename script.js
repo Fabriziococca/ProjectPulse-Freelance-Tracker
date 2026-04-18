@@ -181,8 +181,18 @@ document.addEventListener("DOMContentLoaded", () => {
         currentEditId = null;
     });
 
-    window.deleteProject = (id) => {
-        if (confirm('¿Proyecto entregado? Se moverá al histórico de ingresos.')) {
+    window.markAsDelivered = (id) => {
+        if (confirm('¿Marcar como entregado? El proyecto quedará a la espera de pago.')) {
+            const index = projects.findIndex(p => p.id === id);
+            if (index > -1) {
+                projects[index].isDelivered = true;
+                saveAndRender();
+            }
+        }
+    };
+
+    window.confirmPayment = (id) => {
+        if (confirm('¿Confirmar pago? El proyecto se moverá al histórico de ingresos y se sumará el dinero.')) {
             const index = projects.findIndex(p => p.id === id);
             if (index > -1) {
                 const finishedProject = projects[index];
@@ -347,8 +357,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 else if (remainingPer <= 50) colorVar = "var(--warning)";
             }
 
+            if (p.isDelivered) {
+                countdownText = "A LA ESPERA DE PAGO";
+                colorVar = "var(--warning)";
+                progress = 100;
+            }
+
+            let cardClass = 'card';
+            if (p.isDelivered) {
+                cardClass += ' delivered-card';
+            }
+
             const card = document.createElement('div');
-            card.className = 'card';
+            card.className = cardClass;
             
             const currSymbol = p.currency || 'USD';
             const delegatedBadge = p.isDelegated ? '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>' : '';
@@ -387,8 +408,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 <div class="countdown" style="color:${colorVar}">${countdownText}</div>
                 
                 <div class="card-actions">
-                    <button class="btn btn-edit half" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
-                    <button class="btn btn-delete half" onclick="deleteProject('${p.id}')">✔️ Entregado</button>
+                    ${!p.isDelivered ? `
+                        <button class="btn btn-edit half" onclick="openEditModal('${p.id}')">⚙️ Gestionar</button>
+                        <button class="btn btn-delete half" onclick="markAsDelivered('${p.id}')">✔️ Entregado</button>
+                    ` : `
+                        <button class="btn full" style="background:var(--success); color:white; width:100%; border:none; padding:1rem; font-size:1.1rem; border-radius:12px; margin-top:1rem; cursor:pointer;" onclick="confirmPayment('${p.id}')">💰 Pago Confirmado</button>
+                    `}
                 </div>
             `;
             projectsList.appendChild(card);
