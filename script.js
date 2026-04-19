@@ -45,7 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const modalActionPlan = document.getElementById('action-plan-modal');
     const planModalTitle = document.getElementById('plan-modal-title');
     const planModalClose = document.getElementById('plan-modal-close');
-    const planTextarea = document.getElementById('plan-textarea');
+    const summaryTextarea = document.getElementById('summary-textarea');
+    const phasesTextarea = document.getElementById('phases-textarea');
     const newTaskInput = document.getElementById('new-task-input');
     const btnAddTask = document.getElementById('btn-add-task');
     const tasksListContainer = document.getElementById('tasks-list');
@@ -143,6 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
             manualPercent: inputCustomWorkanaFee.value,
             isDelegated: isDelegated,
             budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated),
+            projectSummary: "",
             actionPlanText: "",
             tasks: []
         };
@@ -199,7 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
         currentPlanProjectId = id;
         const p = projects.find(proj => proj.id === id);
         planModalTitle.innerText = `Plan: ${p.client}`;
-        planTextarea.value = p.actionPlanText || "";
+        summaryTextarea.value = p.projectSummary || "";
+        phasesTextarea.value = p.actionPlanText || "";
         renderTasks(p.tasks || []);
         modalActionPlan.classList.remove('hidden');
     };
@@ -213,7 +216,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!currentPlanProjectId) return;
         const p = projects.find(proj => proj.id === currentPlanProjectId);
         if (p) {
-            p.actionPlanText = planTextarea.value;
+            p.projectSummary = summaryTextarea.value;
+            p.actionPlanText = phasesTextarea.value;
             saveAndRender();
         }
         modalActionPlan.classList.add('hidden');

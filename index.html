@@ -149,11 +149,16 @@
                 <h3 id="plan-modal-title" style="margin: 0;">Plan de Acción</h3>
                 <button id="plan-modal-close" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
             </div>
-            <p class="modal-desc" style="margin-bottom: 15px;">Fases y detalles pendientes.</p>
+            <p class="modal-desc" style="margin-bottom: 15px;">Resumen, Fases y Tareas pendientes.</p>
             
             <div class="input-group">
-                <label>Fases Generales / Notas</label>
-                <textarea id="plan-textarea" class="text-input" rows="6" placeholder="Ej: Fase 1: Paso 1, Paso 2...&#10;Fase 2: Paso 1..." style="resize: vertical; min-height: 100px;"></textarea>
+                <label>Resumen del Proyecto</label>
+                <textarea id="summary-textarea" class="text-input" rows="3" placeholder="¿De qué trata el proyecto básicamente?" style="resize: vertical; min-height: 60px;"></textarea>
+            </div>
+
+            <div class="input-group" style="margin-top: 1.5rem;">
+                <label>Plan paso a paso (Fases)</label>
+                <textarea id="phases-textarea" class="text-input" rows="5" placeholder="Ej: Fase 1: Estructura&#10;Fase 2: Diseño..." style="resize: vertical; min-height: 80px;"></textarea>
             </div>
 
             <div class="input-group" style="margin-top: 1.5rem;">
