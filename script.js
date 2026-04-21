@@ -88,8 +88,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    const isDelegatedInput = document.getElementById('isDelegated');
+    const isReceivedInput = document.getElementById('isReceived');
+
+    if (isDelegatedInput && isReceivedInput) {
+        isDelegatedInput.addEventListener('change', () => {
+            if (isDelegatedInput.checked) isReceivedInput.checked = false;
+        });
+        isReceivedInput.addEventListener('change', () => {
+            if (isReceivedInput.checked) isDelegatedInput.checked = false;
+        });
+    }
+
     // --- CEREBRO FINANCIERO ---
-    function calculateNet(gross, wFeeType, manualPercent, isDelegated = false) {
+    function calculateNet(gross, wFeeType, manualPercent, isDelegated = false, isReceived = false) {
         let finalNet = 0;
         if (wFeeType === 'direct') {
             finalNet = gross;
@@ -101,6 +113,8 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (isDelegated) {
             finalNet = finalNet * 0.30;
+        } else if (isReceived) {
+            finalNet = finalNet * 0.70;
         }
         
         return parseFloat(finalNet.toFixed(2));
@@ -131,6 +145,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const isDelegatedInput = document.getElementById('isDelegated');
         const isDelegated = isDelegatedInput ? isDelegatedInput.checked : false;
 
+        const isReceivedInput = document.getElementById('isReceived');
+        const isReceived = isReceivedInput ? isReceivedInput.checked : false;
+
         const newProject = {
             id: Date.now().toString(),
             client: inputClientName.value.trim(),
@@ -143,7 +160,8 @@ document.addEventListener("DOMContentLoaded", () => {
             wFeeType: workanaFeeSelect.value,
             manualPercent: inputCustomWorkanaFee.value,
             isDelegated: isDelegated,
-            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated),
+            isReceived: isReceived,
+            budgetNet: calculateNet(gross, workanaFeeSelect.value, inputCustomWorkanaFee.value, isDelegated, isReceived),
             projectSummary: "",
             actionPlanText: "",
             tasks: []
@@ -156,6 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setDefaultDate();
         customFeeContainer.classList.add('hidden');
         if (isDelegatedInput) isDelegatedInput.checked = false;
+        if (isReceivedInput) isReceivedInput.checked = false;
     });
 
     window.openEditModal = (id) => {
@@ -188,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentGross = parseFloat(p.budgetGross) || 0;
         if (extraB > 0 || (extraB === 0 && currentGross === 0)) {
             p.budgetGross = currentGross + extraB;
-            p.budgetNet = calculateNet(p.budgetGross, p.wFeeType || '20', p.manualPercent || '0', p.isDelegated);
+            p.budgetNet = calculateNet(p.budgetGross, p.wFeeType || '20', p.manualPercent || '0', p.isDelegated, p.isReceived);
         }
 
         saveAndRender();
@@ -475,7 +494,12 @@ document.addEventListener("DOMContentLoaded", () => {
             card.className = cardClass;
             
             const currSymbol = p.currency || 'USD';
-            const delegatedBadge = p.isDelegated ? '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>' : '';
+            let delegatedBadge = '';
+            if (p.isDelegated) {
+                delegatedBadge = '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>';
+            } else if (p.isReceived) {
+                delegatedBadge = '<span class="badge" style="background:var(--success); color:#fff; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">De Fabro (70%)</span>';
+            }
             
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
