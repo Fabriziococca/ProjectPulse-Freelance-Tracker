@@ -105,6 +105,13 @@ document.addEventListener("DOMContentLoaded", () => {
         let finalNet = 0;
         if (wFeeType === 'direct') {
             finalNet = gross;
+        } else if (wFeeType === 'paypal_direct') {
+            // Tarifa PayPal para pagos comerciales internacionales a Argentina: ~5.4% + USD 0.30 fijos
+            const netAfterPayPal = (gross * (1 - 0.054)) - 0.30;
+            // Luego, el retiro a Lemon (3.5%) y recepción en Lemon (2%)
+            // Multiplicador restante = (1 - 0.035) * (1 - 0.02) = 0.9457
+            finalNet = netAfterPayPal * 0.9457;
+            if (finalNet < 0) finalNet = 0; // Evitar netos negativos en montos minúsculos
         } else {
             let workanaPercent = (wFeeType === 'custom') ? (parseFloat(manualPercent) || 0) : parseFloat(wFeeType);
             const amountAfterWorkana = gross * (1 - (workanaPercent / 100));
