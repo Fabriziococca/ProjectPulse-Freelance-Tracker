@@ -10,7 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const inputAcceptDate = document.getElementById('acceptDate');
     const inputDeliveryDays = document.getElementById('deliveryDays');
     const inputBudgetGross = document.getElementById('budgetGross');
-    const currencySelect = document.getElementById('currencySelect');
     const workanaFeeSelect = document.getElementById('workanaFeeSelect');
     const customFeeContainer = document.getElementById('customFeeContainer');
     const inputCustomWorkanaFee = document.getElementById('customWorkanaFee');
@@ -21,11 +20,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeCount = document.getElementById('activeCount');
     
     const activeUSD = document.getElementById('activeUSD');
-    const activeARS = document.getElementById('activeARS');
     const monthUSD = document.getElementById('monthUSD');
-    const monthARS = document.getElementById('monthARS');
     const totalUSD = document.getElementById('totalUSD');
-    const totalARS = document.getElementById('totalARS');
 
     // --- ELEMENTOS DEL DOM: MODAL DE EDICIÓN ---
     const modal = document.getElementById('edit-modal');
@@ -162,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
             accepted: acceptedDate.toISOString(),
             days: days,
             deadline: deadlineDate.toISOString(),
-            currency: currencySelect.value,
+            currency: 'USD',
             budgetGross: gross,
             wFeeType: workanaFeeSelect.value,
             manualPercent: inputCustomWorkanaFee.value,
@@ -355,34 +351,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- RENDERIZADO VISUAL ---
     function renderDashboard() {
-        let actUSD = 0, actARS = 0;
-        let mthUSD = 0, mthARS = 0;
-        let totUSD = 0, totARS = 0;
+        let actUSD = 0;
+        let mthUSD = 0;
+        let totUSD = 0;
 
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
 
         projects.forEach(p => {
-            const net = p.budgetNet || 0;
-            if (p.currency === 'ARS') actARS += net;
-            else actUSD += net;
+            actUSD += (p.budgetNet || 0);
         });
 
         history.forEach(p => {
-            const isARS = p.currency === 'ARS';
             const net = p.budgetNet || 0;
             
             // Histórico total
-            if (isARS) totARS += net;
-            else totUSD += net;
+            totUSD += net;
 
             // Mes actual
             if (p.deliveredDate) {
                 const dDate = new Date(p.deliveredDate);
                 if (dDate.getMonth() === currentMonth && dDate.getFullYear() === currentYear) {
-                    if (isARS) mthARS += net;
-                    else mthUSD += net;
+                    mthUSD += net;
                 }
             }
         });
@@ -390,13 +381,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const formatMoney = (val) => val.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
         if(activeUSD) activeUSD.innerText = `USD ${formatMoney(actUSD)}`;
-        if(activeARS) activeARS.innerText = `ARS ${formatMoney(actARS)}`;
-        
         if(monthUSD) monthUSD.innerText = `USD ${formatMoney(mthUSD)}`;
-        if(monthARS) monthARS.innerText = `ARS ${formatMoney(mthARS)}`;
-
         if(totalUSD) totalUSD.innerText = `USD ${formatMoney(totUSD)}`;
-        if(totalARS) totalARS.innerText = `ARS ${formatMoney(totARS)}`;
     }
 
     function renderMonthlyHistory() {
@@ -420,17 +406,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 monthsData[monthKey] = {
                     label: monthName.charAt(0).toUpperCase() + monthName.slice(1),
                     usd: 0,
-                    ars: 0,
                     count: 0
                 };
             }
             
-            const net = p.budgetNet || 0;
-            if (p.currency === 'ARS') {
-                monthsData[monthKey].ars += net;
-            } else {
-                monthsData[monthKey].usd += net;
-            }
+            monthsData[monthKey].usd += (p.budgetNet || 0);
             monthsData[monthKey].count++;
         });
 
@@ -448,8 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span class="badge" style="font-size:0.75rem; padding:2px 6px;">${data.count} proy.</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; font-size:0.9rem;">
-                    <span style="color:var(--success); font-weight:bold;">USD ${formatMoney(data.usd)}</span>
-                    <span style="color:var(--warning); font-weight:bold;">ARS ${formatMoney(data.ars)}</span>
+                    <span style="color:var(--success); font-weight:bold; font-size: 1.1rem;">USD ${formatMoney(data.usd)}</span>
                 </div>
             `;
             monthlyHistoryList.appendChild(card);
@@ -500,7 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const card = document.createElement('div');
             card.className = cardClass;
             
-            const currSymbol = p.currency || 'USD';
+            const currSymbol = 'USD';
             let delegatedBadge = '';
             if (p.isDelegated) {
                 delegatedBadge = '<span class="badge" style="background:var(--warning); color:#000; font-size:0.7rem; margin-left:8px; vertical-align:middle; padding:3px 8px;">Delegado (30%)</span>';
