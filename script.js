@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const activeUSD = document.getElementById('activeUSD');
     const monthUSD = document.getElementById('monthUSD');
+    const yearUSD = document.getElementById('yearUSD');
     const totalUSD = document.getElementById('totalUSD');
 
     // --- ELEMENTOS DEL DOM: MODAL DE EDICIÓN ---
@@ -353,6 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderDashboard() {
         let actUSD = 0;
         let mthUSD = 0;
+        let yrUSD = 0;
         let totUSD = 0;
 
         const now = new Date();
@@ -369,11 +371,14 @@ document.addEventListener("DOMContentLoaded", () => {
             // Histórico total
             totUSD += net;
 
-            // Mes actual
+            // Mes actual y año actual
             if (p.deliveredDate) {
                 const dDate = new Date(p.deliveredDate);
-                if (dDate.getMonth() === currentMonth && dDate.getFullYear() === currentYear) {
-                    mthUSD += net;
+                if (dDate.getFullYear() === currentYear) {
+                    yrUSD += net;
+                    if (dDate.getMonth() === currentMonth) {
+                        mthUSD += net;
+                    }
                 }
             }
         });
@@ -382,6 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if(activeUSD) activeUSD.innerText = `USD ${formatMoney(actUSD)}`;
         if(monthUSD) monthUSD.innerText = `USD ${formatMoney(mthUSD)}`;
+        if(yearUSD) yearUSD.innerText = `USD ${formatMoney(yrUSD)}`;
         if(totalUSD) totalUSD.innerText = `USD ${formatMoney(totUSD)}`;
     }
 
