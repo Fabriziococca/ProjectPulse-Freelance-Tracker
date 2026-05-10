@@ -312,13 +312,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const index = projects.findIndex(p => p.id === id);
             if (index > -1) {
                 projects[index].isDelivered = true;
+                projects[index].deliveredAt = new Date().toISOString();
                 saveAndRender();
             }
         }
     };
 
-    window.confirmPayment = (id) => {
-        if (confirm('¿Confirmar pago? El proyecto se moverá al histórico de ingresos y se sumará el dinero.')) {
+    window.confirmPayment = (id, force = false) => {
+        if (force || confirm('¿Confirmar pago? El proyecto se moverá al histórico de ingresos y se sumará el dinero.')) {
             const index = projects.findIndex(p => p.id === id);
             if (index > -1) {
                 const finishedProject = projects[index];
@@ -441,40 +442,93 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function processAutoPayments() {
+        const now = new Date();
+        const idsToConfirm = [];
+        projects.forEach(p => {
+            if (p.isDelivered) {
+                if (!p.deliveredAt) p.deliveredAt = new Date().toISOString();
+                const deliveredDate = new Date(p.deliveredAt);
+                const releaseDate = new Date(deliveredDate.getTime() + 15 * 24 * 60 * 60 * 1000);
+                if (now >= releaseDate) {
+                    idsToConfirm.push(p.id);
+                }
+            }
+        });
+        if (idsToConfirm.length > 0) {
+            idsToConfirm.forEach(id => window.confirmPayment(id, true));
+            return true;
+        }
+        return false;
+    }
+
     function renderProjects() {
+        if (processAutoPayments()) {
+            return;
+        }
+
         projectsList.innerHTML = '';
         activeCount.innerText = projects.length;
         const now = new Date();
 
         projects.forEach(p => {
             const deadline = new Date(p.deadline);
-            const remainingMs = deadline - now;
-            const totalMs = deadline - new Date(p.accepted);
+            let remainingMs = deadline - now;
+            let totalMs = deadline - new Date(p.accepted);
             
             let progress = ((totalMs - remainingMs) / totalMs) * 100;
             progress = Math.max(0, Math.min(100, progress));
             
             let colorVar = "var(--success)";
             let countdownText = "";
+            let leftDateLabel = "Aceptado:";
+            let leftDateVal = formatDate(p.accepted);
+            let rightDateLabel = `Límite (${p.days}d):`;
+            let rightDateVal = formatDate(p.deadline);
             
-            if (remainingMs <= 0) {
-                countdownText = "ENTREGA PENDIENTE";
-                colorVar = "var(--danger)";
-            } else {
-                const d = Math.floor(remainingMs / 86400000);
-                const h = Math.floor((remainingMs % 86400000) / 3600000);
-                countdownText = `Quedan ${d}d ${h}h`;
-                
-                const remainingPer = (remainingMs / totalMs) * 100;
-                if (remainingPer <= 10) colorVar = "var(--danger)";
-                else if (remainingPer <= 30) colorVar = "var(--accent)";
-                else if (remainingPer <= 50) colorVar = "var(--warning)";
-            }
-
             if (p.isDelivered) {
-                countdownText = "A LA ESPERA DE PAGO";
-                colorVar = "var(--warning)";
-                progress = 100;
+                if (!p.deliveredAt) p.deliveredAt = new Date().toISOString();
+                const deliveredDate = new Date(p.deliveredAt);
+                const releaseDate = new Date(deliveredDate.getTime() + 15 * 24 * 60 * 60 * 1000);
+                const relRemainingMs = releaseDate - now;
+                const relTotalMs = 15 * 24 * 60 * 60 * 1000;
+                
+                progress = ((relTotalMs - relRemainingMs) / relTotalMs) * 100;
+                progress = Math.max(0, Math.min(100, progress));
+                
+                leftDateLabel = "Entregado:";
+                leftDateVal = formatDate(p.deliveredAt);
+                rightDateLabel = "Liberación (15d):";
+                rightDateVal = formatDate(releaseDate);
+                
+                if (relRemainingMs <= 0) {
+                    countdownText = "LIBERANDO FONDOS...";
+                    colorVar = "var(--success)";
+                    progress = 100;
+                } else {
+                    const d = Math.floor(relRemainingMs / 86400000);
+                    const h = Math.floor((relRemainingMs % 86400000) / 3600000);
+                    countdownText = `Fondos en ${d}d ${h}h`;
+                    
+                    const remainingPer = (relRemainingMs / relTotalMs) * 100;
+                    if (remainingPer <= 10) colorVar = "var(--success)";
+                    else if (remainingPer <= 50) colorVar = "var(--accent)";
+                    else colorVar = "var(--warning)";
+                }
+            } else {
+                if (remainingMs <= 0) {
+                    countdownText = "ENTREGA PENDIENTE";
+                    colorVar = "var(--danger)";
+                } else {
+                    const d = Math.floor(remainingMs / 86400000);
+                    const h = Math.floor((remainingMs % 86400000) / 3600000);
+                    countdownText = `Quedan ${d}d ${h}h`;
+                    
+                    const remainingPer = (remainingMs / totalMs) * 100;
+                    if (remainingPer <= 10) colorVar = "var(--danger)";
+                    else if (remainingPer <= 30) colorVar = "var(--accent)";
+                    else if (remainingPer <= 50) colorVar = "var(--warning)";
+                }
             }
 
             let cardClass = 'card';
@@ -511,12 +565,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <div class="project-dates">
                     <div class="date-block">
-                        <span>Aceptado:</span>
-                        <strong>${formatDate(p.accepted)}</strong>
+                        <span>${leftDateLabel}</span>
+                        <strong>${leftDateVal}</strong>
                     </div>
                     <div class="date-block" style="text-align: right;">
-                        <span>Límite (${p.days}d):</span>
-                        <strong>${formatDate(p.deadline)}</strong>
+                        <span>${rightDateLabel}</span>
+                        <strong>${rightDateVal}</strong>
                     </div>
                 </div>
 
